@@ -125,6 +125,26 @@ Subroutine Compress(Params, Nodes, Guess_model_2comp, X)
      X_min(ifree)=Min_chrom_y/Norm_chrom_y
      ifree=ifree+1
   End if
+!
+! Spicular feature temp
+!
+  If (Nodes%n_nodes_chrom_temp .eq. 1) then
+     X(ifree)=(Guess_model%chrom_temp-Ref%chrom_temp)/ &
+          Norm_chrom_temp
+     X_max(ifree)=(Max_chrom_temp-Ref%chrom_temp)/Norm_chrom_temp
+     X_min(ifree)=Min_chrom_temp/Norm_chrom_temp
+     ifree=ifree+1
+  End if
+!
+! Spicular feature density factor
+!
+  If (Nodes%n_nodes_chrom_dens_factor .eq. 1) then
+     X(ifree)=(Guess_model%chrom_dens_factor-Ref%chrom_dens_factor)/ &
+          Norm_chrom_dens_factor
+     X_max(ifree)=(Max_chrom_dens_factor-Ref%chrom_dens_factor)/Norm_chrom_dens_factor
+     X_min(ifree)=Min_chrom_dens_factor/Norm_chrom_dens_factor
+     ifree=ifree+1
+  End if
 ! ffactor
   If (Nodes%n_nodes_ffactor .eq. 1) then
      X(ifree)=(Guess_model%ffactor-Ref%ffactor)/ &
@@ -209,7 +229,7 @@ Subroutine Compress(Params, Nodes, Guess_model_2comp, X)
 !
 ! Chromosphere_x
 !
-  If (nodes%n_nodes_chrom_x .eq. 1) then
+  If (nodes%n_nodes_chrom_x2 .eq. 1) then
      X(ifree)=(Guess_model%chrom_x-Ref%chrom_x)/ &
           Norm_chrom_x
      X_max(ifree)=(Max_chrom_x-Ref%chrom_x)/Norm_chrom_x
@@ -219,11 +239,31 @@ Subroutine Compress(Params, Nodes, Guess_model_2comp, X)
 !
 ! Chromosphere_y
 !
-  If (nodes%n_nodes_chrom_y .eq. 1) then
+  If (nodes%n_nodes_chrom_y2 .eq. 1) then
      X(ifree)=(Guess_model%chrom_y-Ref%chrom_y)/ &
           Norm_chrom_y
      X_max(ifree)=(Max_chrom_y-Ref%chrom_y)/Norm_chrom_y
      X_min(ifree)=Min_chrom_y/Norm_chrom_y
+     ifree=ifree+1
+  End if
+!
+! Spicular feature temp
+!
+  If (Nodes%n_nodes_chrom_temp2 .eq. 1) then
+     X(ifree)=(Guess_model%chrom_temp-Ref%chrom_temp)/ &
+          Norm_chrom_temp
+     X_max(ifree)=(Max_chrom_temp-Ref%chrom_temp)/Norm_chrom_temp
+     X_min(ifree)=Min_chrom_temp/Norm_chrom_temp
+     ifree=ifree+1
+  End if
+!
+! Spicular feature density factor
+!
+  If (Nodes%n_nodes_chrom_dens_factor2 .eq. 1) then
+     X(ifree)=(Guess_model%chrom_dens_factor-Ref%chrom_dens_factor)/ &
+          Norm_chrom_dens_factor
+     X_max(ifree)=(Max_chrom_dens_factor-Ref%chrom_dens_factor)/Norm_chrom_dens_factor
+     X_min(ifree)=Min_chrom_dens_factor/Norm_chrom_dens_factor
      ifree=ifree+1
   End if
 ! Abundances
@@ -342,7 +382,17 @@ Subroutine Expand(Params, Nodes, X, New_model_2comp)
      New_model%chrom_y=Ref%chrom_y+X(ifree)*Norm_chrom_y
      ifree=ifree+1
   End if
-! Field ffactor
+  ! Chromosphere_temp
+  If (Nodes%n_nodes_chrom_temp .eq. 1) then
+     New_model%chrom_temp=Ref%chrom_temp+X(ifree)*Norm_chrom_temp
+     ifree=ifree+1
+  End if
+  ! Chromosphere_dens_factor
+  If (Nodes%n_nodes_chrom_dens_factor .eq. 1) then
+     New_model%chrom_dens_factor=Ref%chrom_dens_factor+X(ifree)*Norm_chrom_dens_factor
+     ifree=ifree+1
+  End if
+! Fill ffactor
   If (Nodes%n_nodes_ffactor .eq. 1) then
      New_model%ffactor=Ref%ffactor+X(ifree)*Norm_ffactor
      ifree=ifree+1
@@ -423,13 +473,23 @@ Subroutine Expand(Params, Nodes, X, New_model_2comp)
 !     End if
 !  End do
 ! Chromosphere_x
-  If (Nodes%n_nodes_chrom_x .eq. 1) then
+  If (Nodes%n_nodes_chrom_x2 .eq. 1) then
      New_model%chrom_x=Ref%chrom_x+X(ifree)*Norm_chrom_x
      ifree=ifree+1
   End if
 ! Chromosphere_y
-  If (Nodes%n_nodes_chrom_y .eq. 1) then
+  If (Nodes%n_nodes_chrom_y2 .eq. 1) then
      New_model%chrom_y=Ref%chrom_y+X(ifree)*Norm_chrom_y
+     ifree=ifree+1
+  End if
+  ! Chromosphere_temp
+  If (Nodes%n_nodes_chrom_temp2 .eq. 1) then
+     New_model%chrom_temp=Ref%chrom_temp+X(ifree)*Norm_chrom_temp
+     ifree=ifree+1
+  End if
+  ! Chromosphere_dens_factor
+  If (Nodes%n_nodes_chrom_dens_factor2 .eq. 1) then
+     New_model%chrom_dens_factor=Ref%chrom_dens_factor+X(ifree)*Norm_chrom_dens_factor
      ifree=ifree+1
   End if
 ! Abundances
@@ -694,6 +754,16 @@ Subroutine Check_boundaries(Params, Nodes, Guess_model, Trial_model)
   If (Trial_model%chrom_y .lt. Min_chrom_y) Trial_model%chrom_y=Min_chrom_y
   If (Trial_model%chrom_y .gt. Max_chrom_y) Trial_model%chrom_y=Max_chrom_y
 !
+! Check chrom_temp
+!
+  If (Trial_model%chrom_temp .lt. Min_chrom_temp) Trial_model%chrom_temp=Min_chrom_temp
+  If (Trial_model%chrom_temp .gt. Max_chrom_temp) Trial_model%chrom_temp=Max_chrom_temp
+!
+! Check chrom_dens_factor
+!
+  If (Trial_model%chrom_dens_factor .lt. Min_chrom_dens_factor) Trial_model%chrom_dens_factor=Min_chrom_dens_factor
+  If (Trial_model%chrom_dens_factor .gt. Max_chrom_dens_factor) Trial_model%chrom_dens_factor=Max_chrom_dens_factor
+!
 ! Check expansion
 !
   If (Trial_model%ffactor .lt. Min_ffactor) Trial_model%ffactor=Min_ffactor
@@ -804,7 +874,21 @@ Subroutine Expand_errors(Params, Nodes, Guess_model, X_err, Atmo_errors)
   Else
      Atmo_errors%chrom_y=-1. ! Negative values signal no error bars
   End if
-! Abundances
+! Chromosphere_temp
+  If (Nodes%n_nodes_chrom_temp .eq. 1) then
+     Atmo_errors%chrom_temp=X_err(ifree)*Norm_chrom_temp
+     ifree=ifree+1
+  Else
+     Atmo_errors%chrom_temp=-1. ! Negative values signal no error bars
+  End if
+! Chromosphere_dens_factor
+  If (Nodes%n_nodes_chrom_dens_factor .eq. 1) then
+     Atmo_errors%chrom_dens_factor=X_err(ifree)*Norm_chrom_dens_factor
+     ifree=ifree+1
+  Else
+     Atmo_errors%chrom_dens_factor=-1. ! Negative values signal no error bars
+  End if
+  ! Abundances
   If (Nodes%n_nodes_ab .gt. 0) then
      Atmo_errors%Abundance=-1. ! Negative values signal no error bars at this point
      Atmo_errors%Abundance(Nodes%i_nodes_ab)=X_err(ifree:ifree+Nodes%n_nodes_ab-1) &

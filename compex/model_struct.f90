@@ -5,7 +5,7 @@ Module Model_structure
   End interface
 !
   integer, parameter :: n_model_elements=92
-  integer, parameter :: nvarsdepth=22, nvarssingle=13+n_model_elements
+  integer, parameter :: nvarsdepth=22, nvarssingle=13+n_model_elements+2
   Type Model
 ! temp is in K, v_los and v_mic are in cm/s, el_p and gas_p are in dyn/cm^2, 
 ! rho is in g/cm^3, b_long, b_x, b_y is in gauss, 
@@ -24,6 +24,12 @@ Module Model_structure
      real :: keep_el_p, keep_gas_p, keep_rho, keep_nH, keep_nHminus, keep_nHplus
      real :: keep_nH2, keep_nh2plus
      real, dimension(n_model_elements) :: Abundance
+     ! New elements for spicular features
+     integer :: nzobs=0, nlambda=0
+     real, dimension(:), allocatable :: zobs
+     real, dimension(:,:), allocatable :: boundary_int
+     real :: chrom_temp, chrom_dens_factor, delta_s, inclination
+     !
   End Type Model
   Type Model_2comp
      Type (Model) :: Comp1, Comp2
@@ -111,6 +117,12 @@ Contains
   Allocate(Modelo%nHminus(npoints))
   Allocate(Modelo%nH2(npoints))
   Allocate(Modelo%nH2plus(npoints))
+  if (Modelo%nzobs .le. 0 .or. Modelo%nlambda .le. 0) then
+     Print *,'Error allocating model, nzobs=',Modelo%nzobs,' nlambda=',Modelo%nlambda
+     Stop
+  Endif
+  Allocate(Modelo%zobs(Modelo%nzobs))
+  Allocate(Modelo%zobs(Modelo%nzobs,Modelo%boundary_int))
 !
   Return
 End Subroutine Allocate_model
@@ -153,6 +165,8 @@ Subroutine DeAllocate_model(Modelo)
   If (Allocated(Modelo%nHminus)) Deallocate(Modelo%nHminus)
   If (Allocated(Modelo%nH2)) Deallocate(Modelo%nH2)
   If (Allocated(Modelo%nH2plus)) Deallocate(Modelo%nH2plus)
+  If (Allocated(Modelo%zobs)) Deallocate(Modelo%zobs)
+  If (Allocated(Modelo%boundary_int)) Deallocate(Modelo%boundary_int)
   Return
 End Subroutine DeAllocate_model
 !
@@ -207,6 +221,15 @@ Subroutine Model_assign(A,B)
   A%Keep_nH2=B%Keep_nH2
   A%Keep_nh2plus=B%Keep_nh2plus
   A%Abundance=B%Abundance
+  A%nzobs=B%nzobs
+  A%nlambda=B%nlambda
+  A%zobs=B%zobs
+  A%boundary_int=B%boundary_int
+  A%chrom_temp=B%chrom_temp
+  A%chrom_dens_factor=B%chrom_dens_factor
+  A%delta_s=B%delta_s
+  A%inclination=B%inclination
+  
 End subroutine Model_assign
 !
 Subroutine Model_assign_2comp(A,B)

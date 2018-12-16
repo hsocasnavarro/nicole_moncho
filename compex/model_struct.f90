@@ -6,7 +6,7 @@ Module Model_structure
 !
   integer, parameter :: maxspic_nz=100, maxspic_nlambda=100
   integer, parameter :: n_model_elements=92
-  integer, parameter :: n_spic=2+maxspic_nz+maxspic_nz*maxspic_nlmabda+4
+  integer, parameter :: n_spic=2+maxspic_nz+maxspic_nz*maxspic_nlambda+4
   integer, parameter :: nvarsdepth=22, nvarssingle=13+n_model_elements+2
   Type Model
 ! temp is in K, v_los and v_mic are in cm/s, el_p and gas_p are in dyn/cm^2, 

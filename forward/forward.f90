@@ -2063,13 +2063,6 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
   idata=1 ! Index for Syn_profile
   Syn_profile(:)=-1e10
   !
-  ! Atmosphere for spicule mode
-  !
-
-  
-
-  
-  !
   ! Calculate line- and wavelength-independent data.
   !
   Do idepth=1, npoints !$$ PARALLEL LOOP START 
@@ -2198,6 +2191,9 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
   Atmo%el_p(1:Params%n_points)=Atmo%el_p(1:Params%n_points)*Atmo%spic_dens_factor
   Atmo%Gas_p(1:Params%n_points)=Atmo%Gas_p(1:Params%n_points)*Atmo%spic_dens_factor
   Atmo%Rho(1:Params%n_points)=Atmo%Rho(1:Params%n_points)*Atmo%spic_dens_factor
+  Do iline=1,Params%n_lines
+     Dldop(iline, 1:npoints)=Atmo%spic_Doppler ! Doppler width in A
+  End do
   !
   ! Start loop in spectral regions and wavelengths.
   !

@@ -2,7 +2,9 @@
 ; arrays and variables except abundances, which are set to the 
 ; Grevesse & Sauval (1998) values
 
-function new_model,nx,ny,nz
+function new_model,nx,ny,nz,maxspic_nz=maxspic_nz,maxspic_nlambda=maxspic_nlambda
+  maxspic_nz=100 ; must match model_struct.f90
+  maxspic_nlambda=100
 
 
   m={z:fltarr(nx,ny,nz), tau:fltarr(nx,ny,nz),  t:fltarr(nx,ny,nz), $
@@ -20,7 +22,12 @@ function new_model,nx,ny,nz
      keep_nHminus: fltarr(nx,ny), keep_nHplus: fltarr(nx,ny), $
      keep_nH2: fltarr(nx,ny), keep_nh2plus: fltarr(nx,ny), $
      ffactor: fltarr(nx,ny), abundance: fltarr(nx,ny,92), $
-     chrom_x: fltarr(nx,ny), chrom_y: fltarr(nx,ny)}
+     chrom_x: fltarr(nx,ny), chrom_y: fltarr(nx,ny), $
+     spic_nz: 0., spic_nlambda: 0., spic_z: fltarr(nx,ny,maxspic_nz), $
+     spic_boundary_int: fltarr(nx,ny,maxspic_nz,maxspic_nlambda),$
+     spic_temp: fltarr(nx,ny), spic_dens_factor: fltarr(nx,ny), $
+     spic_ds: fltarr(nx,ny), spic_doppler: fltarr(nx,ny) $     
+  }
   for ix=0,nx-1 do for iy=0,ny-1 do $
      m.abundance[ix,iy,*]=[ 12.00,10.93,1.10,1.40,2.55,8.52,7.92,8.83,4.56,8.08,6.33,7.58,$
                 6.47,7.55,5.45,7.33,5.5,6.40,5.12,6.36,3.17,5.02,4.00,5.67,$

@@ -295,7 +295,7 @@ Program Nicole
   !
   Params%n_data=0
   Do iregion=1, Params%n_regions
-     nwlengths=Region(iregion)%nwavelengths
+     nwlengths=Region(iregion)%nwavelengths*maxspic_nz
      Params%n_data=Params%n_data+nwlengths
   End do
   Params%n_data=Params%n_data*4 ! 4 Stokes parameters for each wlength

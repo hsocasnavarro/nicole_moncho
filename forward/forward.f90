@@ -693,8 +693,11 @@ Subroutine Scalar_hermite(npoints, tau_nu, S, Intensity, boundary_switch)
 !
   If (boundary_switch .eq. 0) then
      Intensity(ibound:npoints)=S(ibound:npoints)!+S_p(ibound:npoints)
-  Else
+  Else if (boundary_switch .eq. 1) then
      Intensity(ibound:npoints)=0.
+  Else
+     ibound=npoints
+     Intensity(ibound:npoints)=S(npoints)
   End if
 !
 ! Ray propagation
@@ -1008,7 +1011,7 @@ End Subroutine WPM
     End do
     if(ibound .lt. npoints) ibound = ibound + 1
     if(ubound .gt. 1) ubound = ubound - 1
-
+    if (boundary_switch .eq. 2) ibound=npoints
 
     !
     ! Source function
@@ -1030,8 +1033,10 @@ End Subroutine WPM
     ostokes(2:4)=0.0d0
     If (boundary_switch .eq. 0) then
        ostokes(1) = S(ibound) ! Boundary cond.
-    Else
+    Else if (boundary_switch .eq. 1) then
        ostokes(1) = 0.
+    Else
+       ostokes(1) = S(npoints) ! Boundary cond.
     Endif
 
     !
@@ -1126,8 +1131,11 @@ Subroutine SC_solver(npoints, dtau_nu, Ab, S, Emergent_stokes, boundary_switch)
 !
   If (boundary_switch .eq. 0) then
      Intensity(ibound)=S(ibound) ! Boundary cond.
-  Else
+  Else if (boundary_switch .eq. 1) then
      Intensity(ibound)=0.
+  Else
+     ibound=npoints
+     Intensity(ibound)=S(npoints) ! Boundary cond.
   Endif
   ipoint=ibound-1
   Do while (ipoint .gt. 1 .and. tau_nu(ipoint) .gt. Optically_thin) ! Loop
@@ -1199,8 +1207,11 @@ Subroutine Delopar(npoints, ltau_500, Ab_matrix, Source, Emergent_Stokes, bounda
   Stokes(ibound:npoints,2:4)=0.
   If (boundary_switch .eq. 0) then
      Stokes(ibound:npoints,1)=Source(ibound:npoints) ! Boundary cond.
-  Else
+  Else if (boundary_switch .eq. 1) then
      Stokes(ibound:npoints,1)=0.
+  Else
+     ibound=npoints
+     Stokes(ibound:npoints,1)=Source(npoints) ! Boundary cond.
   Endif
 !
 ! Identity matrix
@@ -1381,8 +1392,11 @@ Subroutine Delolin(npoints, dtau_nu, Ab_matrix, Source, Emergent_Stokes, boundar
   Stokes(ibound:npoints,2:4)=0.
   If (boundary_switch .eq. 0) then 
      Stokes(ibound:npoints,1)=Source(ibound:npoints) ! Boundary cond.
-  Else
+  Else if (boundary_switch .eq. 0) then 
      Stokes(ibound:npoints,1)=0.
+  Else
+     ibound=npoints
+     Stokes(ibound:npoints,1)=Source(npoints) ! Boundary cond.
   Endif
 !
 ! Identity matrix
@@ -1891,11 +1905,11 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
   Integer, Parameter :: NQuad=5 ! Number of points in quadrature (2 to 5)
   Logical :: Hydro,  End
   Real, Dimension (Params%n_data) :: Syn_profile
-  Real, Dimension (Params%n_points) :: Source_f, ltau_500_mu, term, PlanckSF, source_l_f
+  Real, Dimension (Params%n_points) :: Source_f, ltau_500_mu, term, PlanckSF, source_l_f, Source_spic, dtau_spic
   Real, Dimension (Params%n_points) :: Cont_op_5000, Cont_op, Cont_op_5000_2
   Real, Dimension (Params%n_points) :: ng_i, ng_j, tmp
   Real, Dimension (Params%n_lines, Params%n_points) :: Dldop, Damp, Line_op
-  Real, Dimension (Params%n_points,4,4) :: Absorp_height
+  Real, Dimension (Params%n_points,4,4) :: Absorp_height, Absorp1
   Real, Dimension (:,:,:,:), Allocatable :: Absorp, TotAbsorp
   Real, Dimension (:,:), Allocatable :: Phi_I, Phi_Q, Phi_U, Phi_V
   Real, Dimension (:,:), Allocatable :: Psi_Q, Psi_U, Psi_V, TotEmis
@@ -1906,10 +1920,10 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
   Real, Dimension (1) :: imin1, DWave1
   Real, Dimension (NQuad) :: XMU, WMU
   Real :: reference_cont, nu, Wave_cm, Av_mol_weight
-  Real :: mu, DWave, DWave2, last_update, metal, dx
+  Real :: mu, DWave, DWave2, last_update, metal, dx, c0, c1, dc, dtau
   Real :: PH, PHminus, PHplus, PH2, PH2plus, n2P, Scat
   Integer :: npoints, idepth, iline, iwave, nwlengths, idata, ichoice, iunit, ntrans
-  Integer :: iregion, i, j,  NMu, imu, itran, imin, irec, iostat
+  Integer :: iregion, i, j, NMu, imu, itran, imin, irec, iostat, ispic_z, k0, k1
   Integer, Parameter :: nformalsolutions=8
   Integer, Dimension(nformalsolutions) :: nformal
   Logical, Save :: do_NLTE
@@ -2049,6 +2063,13 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
   idata=1 ! Index for Syn_profile
   Syn_profile(:)=-1e10
   !
+  ! Atmosphere for spicule mode
+  !
+
+  
+
+  
+  !
   ! Calculate line- and wavelength-independent data.
   !
   Do idepth=1, npoints !$$ PARALLEL LOOP START 
@@ -2170,6 +2191,13 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
      Line_op(iline, 1:npoints)=Line_op(iline, 1:npoints) / &
           Atmo%Rho(1:npoints) ! cm^2/cm^3 to cm^2/g
   End do ! End line loop
+  !
+  ! NLTE has been done. Now modify atmosphere for spicule mode
+  !
+  Atmo%Temp(1:Params%n_points)=Atmo%spic_temp
+  Atmo%el_p(1:Params%n_points)=Atmo%el_p(1:Params%n_points)*Atmo%spic_dens_factor
+  Atmo%Gas_p(1:Params%n_points)=Atmo%Gas_p(1:Params%n_points)*Atmo%spic_dens_factor
+  Atmo%Rho(1:Params%n_points)=Atmo%Rho(1:Params%n_points)*Atmo%spic_dens_factor
   !
   ! Start loop in spectral regions and wavelengths.
   !
@@ -2367,64 +2395,99 @@ Subroutine Forward_1comp(Params, Line, Region, Atmo_in, Syn_profile, Hydro)
         !
         Syn_profile(idata:idata+3)=0. 
         Absorp_height(:,:,:)=TotAbsorp(iwave,:,:,:)
+        Absorp1(:,:,:)=0.
+        Absorp1(:,1,1)=1.
 
-        Do imu=1, NMu ! Loop in angles to compute flux
-           mu=XMU(imu) ! mu=Cos. of heliocentric angle
-           ltau_500_mu=Atmo%ltau_500 - Log10(mu) ! Optical depth along l.o.s.
-           Call time_routine('formalsolution',.True.)
-           Call formal_solution(Params%n_points, Params%formal_solution, &
-                ltau_500_mu, Absorp_height, Source_f, &
-                Stokes, ichoice, Params%formal_boundary_cond) ! Formal solution
-           Call time_routine('formalsolution',.False.)
-           If (Params%reference_cont .eq. 4) then ! Normalize to local cont
-              If (iwave .eq. 1) then ! First point
-                 If (imu .eq. 1) reference_cont=0.
-                 reference_cont=reference_cont+WMu(imu)*Stokes(1)
-
-              End if
-           End if
-           Syn_profile(idata:idata+3)=Syn_profile(idata:idata+3) + &
-                WMu(imu)*Stokes(1:4)
-           If (CheckNaN(Sum(Syn_profile(idata:idata+3)))) then
-              If (Debug_level .ge. 1) then
-                 Write (Debug_FileUnit,*) '  ** Error in forward: Returning NaNs'
-                 Write (Debug_FileUnit,*) '     Region, wavelength, mu:'
-                 Write (Debug_FileUnit,*) iregion,iwave,imu
-                 Write (Debug_FileUnit,*) '     Atmosphere that caused the error follows'
-                 Write (Debug_FileUnit,*) '     ------   Z   ------'
-                 Write (Debug_FileUnit,*) Atmo%Z_scale
-                 Write (Debug_FileUnit,*) '     ------   tau_500  ------'
-                 Write (Debug_FileUnit,*) Atmo%ltau_500
-                 Write (Debug_FileUnit,*) '     ------   T  ------'
-                 Write (Debug_FileUnit,*) Atmo%Temp
-                 Write (Debug_FileUnit,*) '     ------   Electron pressure  ------'
-                 Write (Debug_FileUnit,*) Atmo%El_p
-                 Write (Debug_FileUnit,*) '     ------   Gas pressure  ------'
-                 Write (Debug_FileUnit,*) Atmo%Gas_p
-                 Write (Debug_FileUnit,*) '     ------   Density  ------'
-                 Write (Debug_FileUnit,*) Atmo%Rho
-                 Write (Debug_FileUnit,*) '     ------   Background Opacity  ------'
-                 Write (Debug_FileUnit,*) Cont_op
-                 Write (Debug_FileUnit,*) '     ------   TotAbsorp (1,1)  ------'
-                 Write (Debug_FileUnit,*) TotAbsorp(iwave,:,1,1)
-                 Write (Debug_FileUnit,*) '     ------   TotAbsorp (1,4)  ------'
-                 Write (Debug_FileUnit,*) TotAbsorp(iwave,:,1,4)
-                 Write (Debug_FileUnit,*) '     ------   TotAbsorp (2,3)  ------'
-                 Write (Debug_FileUnit,*) TotAbsorp(iwave,:,2,3)
-                 Write (Debug_FileUnit,*) '     ------   Source_f  ------'
-                 Write (Debug_FileUnit,*) Source_f
-                 Write (Debug_FileUnit,*) '     ------   NLTE?  ------'
-                 Write (Debug_FileUnit,*) NLTE_done
-                 If (NLTE_done) then
-                    Write (Debug_FileUnit,*) '     -----  N_low ----- '
-                    Write (Debug_FileUnit,*) NLTE%N(i,:)
-                    Write (Debug_FileUnit,*) '     -----  N_up  ----- '
-                    Write (Debug_FileUnit,*) NLTE%N(j,:)
+        if (Params%n_points .lt. 10) then
+           print *,'Error. Params%npoints must be .ge. 10'
+           Stop
+        End if
+        Do ispic_z=1, Atmo%spic_nz
+           Source_spic(:)=0.
+           dtau_spic(:)=1e-10
+           k0=Params%n_points
+           Do while (Atmo%z_scale(k0) .lt. Atmo%spic_z(ispic_z) .and. k0 .gt. 1)
+              k0=k0-1
+           End do
+           If (k0 .lt. Params%n_points) k0=k0+1
+           if (k0 .le. 2) k0=2
+           k1=k0-1
+           dc=Atmo%z_scale(k1)-Atmo%z_scale(k0)
+           c0=1.-(Atmo%spic_z(ispic_z)-Atmo%z_scale(k0))/dc
+           if (Atmo%spic_z(ispic_z) .lt. Atmo%z_scale(k0)) c0=1.
+           c1=1.-c0
+           Source_spic(Params%n_points)=Atmo%spic_boundary_int(ispic_z,iwave)
+           Source_spic(Params%n_points-5:Params%n_points-1)=c0*Source_f(k0)+c1*Source_f(k1)
+           dtau=c0*Absorp_height(k0,1,1)*Cont_op_5000(k0)*Atmo%rho(k0)+ &
+                c1*Absorp_height(k1,1,1)*Cont_op_5000(k1)*Atmo%rho(k1) ! Absorption coefficient cm^2/cm^3
+           dtau=dtau*(Atmo%spic_ds*1e5)
+           dtau_spic(Params%n_points-4:Params%n_points-1)=dtau/4. ! dtau(i) is delta tau between point (i-1) and (i)
+           ltau_500_mu(1)=dtau_spic(1)
+           Do idepth=2, npoints
+              ltau_500_mu(idepth)=ltau_500_mu(idepth-1)+dtau_spic(idepth)
+           End do
+           Do idepth=1, npoints
+              ltau_500_mu(idepth)=alog10(ltau_500_mu(idepth-1))
+           End do
+        
+           Do imu=1, NMu ! Loop in angles to compute flux
+              mu=XMU(imu) ! mu=Cos. of heliocentric angle
+              ltau_500_mu=Atmo%ltau_500 - Log10(mu) ! Optical depth along l.o.s.
+              Call time_routine('formalsolution',.True.)
+              Call formal_solution(Params%n_points, Params%formal_solution, &
+                   ltau_500_mu, Absorp1, Source_spic, &
+                   Stokes, ichoice, 2) ! Formal solution
+              Call time_routine('formalsolution',.False.)
+              If (Params%reference_cont .eq. 4) then ! Normalize to local cont
+                 If (iwave .eq. 1) then ! First point
+                    If (imu .eq. 1) reference_cont=0.
+                    reference_cont=reference_cont+WMu(imu)*Stokes(1)
+                    
                  End if
-                 Call Debug_Log('Error in Forward, discarding results',1)
-                 Syn_profile(:)=2E25 ! Discard this result
               End if
-           End if
+              Syn_profile(idata:idata+3)=Syn_profile(idata:idata+3) + &
+                   WMu(imu)*Stokes(1:4)
+              If (CheckNaN(Sum(Syn_profile(idata:idata+3)))) then
+                 If (Debug_level .ge. 1) then
+                    Write (Debug_FileUnit,*) '  ** Error in forward: Returning NaNs'
+                    Write (Debug_FileUnit,*) '     Region, wavelength, mu:'
+                    Write (Debug_FileUnit,*) iregion,iwave,imu
+                    Write (Debug_FileUnit,*) '     Atmosphere that caused the error follows'
+                    Write (Debug_FileUnit,*) '     ------   Z   ------'
+                    Write (Debug_FileUnit,*) Atmo%Z_scale
+                    Write (Debug_FileUnit,*) '     ------   tau_500  ------'
+                    Write (Debug_FileUnit,*) Atmo%ltau_500
+                    Write (Debug_FileUnit,*) '     ------   T  ------'
+                    Write (Debug_FileUnit,*) Atmo%Temp
+                    Write (Debug_FileUnit,*) '     ------   Electron pressure  ------'
+                    Write (Debug_FileUnit,*) Atmo%El_p
+                    Write (Debug_FileUnit,*) '     ------   Gas pressure  ------'
+                    Write (Debug_FileUnit,*) Atmo%Gas_p
+                    Write (Debug_FileUnit,*) '     ------   Density  ------'
+                    Write (Debug_FileUnit,*) Atmo%Rho
+                    Write (Debug_FileUnit,*) '     ------   Background Opacity  ------'
+                    Write (Debug_FileUnit,*) Cont_op
+                    Write (Debug_FileUnit,*) '     ------   TotAbsorp (1,1)  ------'
+                    Write (Debug_FileUnit,*) TotAbsorp(iwave,:,1,1)
+                    Write (Debug_FileUnit,*) '     ------   TotAbsorp (1,4)  ------'
+                    Write (Debug_FileUnit,*) TotAbsorp(iwave,:,1,4)
+                    Write (Debug_FileUnit,*) '     ------   TotAbsorp (2,3)  ------'
+                    Write (Debug_FileUnit,*) TotAbsorp(iwave,:,2,3)
+                    Write (Debug_FileUnit,*) '     ------   Source_f  ------'
+                    Write (Debug_FileUnit,*) Source_f
+                    Write (Debug_FileUnit,*) '     ------   NLTE?  ------'
+                    Write (Debug_FileUnit,*) NLTE_done
+                    If (NLTE_done) then
+                       Write (Debug_FileUnit,*) '     -----  N_low ----- '
+                       Write (Debug_FileUnit,*) NLTE%N(i,:)
+                       Write (Debug_FileUnit,*) '     -----  N_up  ----- '
+                       Write (Debug_FileUnit,*) NLTE%N(j,:)
+                    End if
+                    Call Debug_Log('Error in Forward, discarding results',1)
+                    Syn_profile(:)=2E25 ! Discard this result
+                 End if
+              End if
+           End do
         End do
 
         If (ichoice .gt. nformalsolutions) then

@@ -4,7 +4,9 @@ Module Model_structure
      Module procedure Model_assign, Model_assign_2comp
   End interface
 !
+  integer, parameter :: maxspic_nz=100, maxspic_nlambda=100
   integer, parameter :: n_model_elements=92
+  integer, parameter :: n_spic=2+maxspic_nz+maxspic_nz*maxspic_nlmabda+4
   integer, parameter :: nvarsdepth=22, nvarssingle=13+n_model_elements+2
   Type Model
 ! temp is in K, v_los and v_mic are in cm/s, el_p and gas_p are in dyn/cm^2, 
@@ -25,10 +27,10 @@ Module Model_structure
      real :: keep_nH2, keep_nh2plus
      real, dimension(n_model_elements) :: Abundance
      ! New elements for spicular features
-     integer :: nzobs=0, nlambda=0
-     real, dimension(:), allocatable :: zobs
-     real, dimension(:,:), allocatable :: boundary_int
-     real :: chrom_temp, chrom_dens_factor, delta_s, inclination
+     integer :: spic_nz=0, nlambda=0
+     real, dimension(:), allocatable :: spic_z
+     real, dimension(:,:), allocatable :: spic_boundary_int
+     real :: spic_temp, spic_dens_factor, spic_doppler, spic_ds ! spic_ds in km
      !
   End Type Model
   Type Model_2comp
@@ -117,12 +119,13 @@ Contains
   Allocate(Modelo%nHminus(npoints))
   Allocate(Modelo%nH2(npoints))
   Allocate(Modelo%nH2plus(npoints))
-  if (Modelo%nzobs .le. 0 .or. Modelo%nlambda .le. 0) then
-     Print *,'Error allocating model, nzobs=',Modelo%nzobs,' nlambda=',Modelo%nlambda
+  if (Modelo%spic_nz .le. 0 .or. Modelo%nlambda .le. 0 .or. Modelo%spic_nz .gt. maxspic_nz) then
+     Print *,'Error allocating model, spic_nz=',Modelo%spic_nz,' nlambda=',Modelo%nlambda
+     Print *,'Maximum spic_nz parameter (maxspic_nz in model_struct.f90)=',maxspic_nz
      Stop
   Endif
-  Allocate(Modelo%zobs(Modelo%nzobs))
-  Allocate(Modelo%zobs(Modelo%nzobs,Modelo%boundary_int))
+  Allocate(Modelo%spic_z(Modelo%spic_nz))
+  Allocate(Modelo%spic_boundary_int(Modelo%spic_nz,Modelo%nlambda))
 !
   Return
 End Subroutine Allocate_model
@@ -165,8 +168,8 @@ Subroutine DeAllocate_model(Modelo)
   If (Allocated(Modelo%nHminus)) Deallocate(Modelo%nHminus)
   If (Allocated(Modelo%nH2)) Deallocate(Modelo%nH2)
   If (Allocated(Modelo%nH2plus)) Deallocate(Modelo%nH2plus)
-  If (Allocated(Modelo%zobs)) Deallocate(Modelo%zobs)
-  If (Allocated(Modelo%boundary_int)) Deallocate(Modelo%boundary_int)
+  If (Allocated(Modelo%spic_z)) Deallocate(Modelo%spic_z)
+  If (Allocated(Modelo%spic_boundary_int)) Deallocate(Modelo%spic_boundary_int)
   Return
 End Subroutine DeAllocate_model
 !
@@ -221,14 +224,13 @@ Subroutine Model_assign(A,B)
   A%Keep_nH2=B%Keep_nH2
   A%Keep_nh2plus=B%Keep_nh2plus
   A%Abundance=B%Abundance
-  A%nzobs=B%nzobs
+  A%spic_nz=B%spic_nz
   A%nlambda=B%nlambda
-  A%zobs=B%zobs
-  A%boundary_int=B%boundary_int
-  A%chrom_temp=B%chrom_temp
-  A%chrom_dens_factor=B%chrom_dens_factor
-  A%delta_s=B%delta_s
-  A%inclination=B%inclination
+  A%spic_z=B%spic_z
+  A%spic_boundary_int=B%spic_boundary_int
+  A%spic_temp=B%spic_temp
+  A%spic_dens_factor=B%spic_dens_factor
+  A%spic_ds=B%spic_ds
   
 End subroutine Model_assign
 !

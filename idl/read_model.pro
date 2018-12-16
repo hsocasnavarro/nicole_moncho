@@ -35,6 +35,9 @@ function read_model,filename,outfile=outfile,nz=nz,npix=npix,chisq=chisq, $
   free_lun,inunit
   nz=tmp(3)
   formatversion='xxx'
+  spic_nz=1
+  spic_nlambda=1
+  
   if tmp(0) eq 3328553116003166574 and tmp(1) eq 2314885530823516726 then begin
      formatversion='1.6'
      npix=tmp(2)
@@ -71,27 +74,26 @@ function read_model,filename,outfile=outfile,nz=nz,npix=npix,chisq=chisq, $
      ny=tmp(5)
      npix=long(nx*ny)
   endif
+  ; openw,1,'borrame.dat' & writeu,1,'nicole_spic18.12' & close,1
+  if tmp(0) eq 8313474953548884334 and tmp(1) eq 3616722794636863856 then begin
+     formatversion='spic18.12'
+     openr,inunit,filename,/get_lun,/swap_if_big_endian
+     tmp=lonarr(26)
+     readu,inunit,tmp
+     free_lun,inunit
+     nx=tmp[4]
+     ny=tmp[5]
+     npix=long(nx*ny)
+  endif
   if formatversion eq 'xxx' then begin
      print,'File is not a valid model file:',filename
+     print,'Magic number signature:'
+     print,'tmp(0)=',tmp(0)
+     print,'tmp(1)=',tmp(1)     
      stop
   endif
 
-  m={z:fltarr(nx,ny,nz), tau:fltarr(nx,ny,nz),  t:fltarr(nx,ny,nz), $
-     gas_p:fltarr(nx,ny,nz), rho:fltarr(nx,ny,nz), el_p:fltarr(nx,ny,nz), $
-     v_los:fltarr(nx,ny,nz), v_mic:fltarr(nx,ny,nz), $
-     b_los_z:fltarr(nx,ny,nz), b_los_x:fltarr(nx,ny,nz), $
-     b_los_y:fltarr(nx,ny,nz), b_x:fltarr(nx,ny,nz), $
-     b_y:fltarr(nx,ny,nz), b_z:fltarr(nx,ny,nz), $
-     v_x:fltarr(nx,ny,nz), v_y:fltarr(nx,ny,nz), v_z:fltarr(nx,ny,nz), $
-     nH: fltarr(nx,ny,nz), nHminus: fltarr(nx,ny,nz), nHplus: fltarr(nx,ny,nz),$
-     nH2: fltarr(nx,ny,nz), nh2plus: fltarr(nx,ny,nz), $
-     v_mac: fltarr(nx,ny), stray_frac: fltarr(nx,ny),$
-     chrom_x: fltarr(nx,ny), chrom_y: fltarr(nx,ny),$
-     keep_el_p: fltarr(nx,ny), keep_gas_p: fltarr(nx,ny), $
-     keep_rho: fltarr(nx,ny), keep_nH: fltarr(nx,ny), $
-     keep_nHminus: fltarr(nx,ny), keep_nHplus: fltarr(nx,ny), $
-     keep_nH2: fltarr(nx,ny), keep_nh2plus: fltarr(nx,ny), $
-     ffactor: fltarr(nx,ny), abundance: fltarr(nx,ny,92)}
+  m=new_model(nx,ny,nz,maxspic_nz=maxspic_nz,maxspic_nlambda=maxspic_nlambda)
 
   openr,inunit,filename,/get_lun,/swap_if_big_endian
 
@@ -173,8 +175,41 @@ function read_model,filename,outfile=outfile,nz=nz,npix=npix,chisq=chisq, $
      ON_IOERROR,NULL
  endif
 
-  if formatversion eq '18.04' then begin
+  if formatversion eq '1.6' then begin
+     tmp=dblarr(13*nz+3)
+     readu,inunit,tmp           ; Ignore first record (signature)
+     ON_IOERROR,ers2
+     for ipix=0l,npix-1 do begin
+        if not eof(inunit) then readu,inunit,tmp
+        ers2: m.z(0,ipix,*)=tmp(0*nz:(0+1)*nz-1)
+        m.tau(0,ipix,*)=tmp(1*nz:(1+1)*nz-1)
+        m.t(0,ipix,*)=tmp(2*nz:(2+1)*nz-1)
+        m.gas_p(0,ipix,*)=tmp(3*nz:(3+1)*nz-1)
+        m.rho(0,ipix,*)=tmp(4*nz:(4+1)*nz-1)
+        m.el_p(0,ipix,*)=tmp(5*nz:(5+1)*nz-1)
+        m.v_los(0,ipix,*)=tmp(6*nz:(6+1)*nz-1)
+        m.v_mic(0,ipix,*)=tmp(7*nz:(7+1)*nz-1)
+        m.b_los_z(0,ipix,*)=tmp(8*nz:(8+1)*nz-1)
+        m.b_los_x(0,ipix,*)=tmp(9*nz:(9+1)*nz-1)
+        m.b_los_y(0,ipix,*)=tmp(10*nz:(10+1)*nz-1)
+;        m.b_local_inc(0,ipix,*)=tmp(11*nz:(11+1)*nz-1)
+;        m.b_local_azi(0,ipix,*)=tmp(12*nz:(12+1)*nz-1)
+        m.v_mac(0,ipix)=tmp(13*nz)
+        m.stray_frac(0,ipix)=tmp(13*nz+1)
+        m.ffactor(0,ipix)=tmp(13*nz+2)
+        m.chrom_x[0,ipix]=0.
+        m.chrom_y[0,ipix]=0.
+     endfor
+     ON_IOERROR,NULL
+ endif
+
+
+  if formatversion eq '18.04' or formatversion eq 'spic18.12' then begin
      tmp=dblarr(22*nz+13+92)
+     if formatversion eq 'spic18.12' then begin
+        nspic=2+1*100+1*100*100+4
+        tmp=dblarr(22*nz+13+92+nspic)
+     endif
      readu,inunit,tmp           ; Ignore first record (signature)
      ON_IOERROR,ers4
      for ix=0l,nx-1 do for iy=0l,ny-1 do begin
@@ -215,34 +250,17 @@ function read_model,filename,outfile=outfile,nz=nz,npix=npix,chisq=chisq, $
         m.abundance(ix,iy,0:91)=tmp(22*nz+12+1:22*nz+12+92)
         m.chrom_x(ix,iy)=tmp(22*nz+11)
         m.chrom_y(ix,iy)=tmp(22*nz+12)
-     endfor
-     ON_IOERROR,NULL
- endif
-
-  if formatversion eq '1.6' then begin
-     tmp=dblarr(13*nz+3)
-     readu,inunit,tmp           ; Ignore first record (signature)
-     ON_IOERROR,ers2
-     for ipix=0l,npix-1 do begin
-        if not eof(inunit) then readu,inunit,tmp
-        ers2: m.z(0,ipix,*)=tmp(0*nz:(0+1)*nz-1)
-        m.tau(0,ipix,*)=tmp(1*nz:(1+1)*nz-1)
-        m.t(0,ipix,*)=tmp(2*nz:(2+1)*nz-1)
-        m.gas_p(0,ipix,*)=tmp(3*nz:(3+1)*nz-1)
-        m.rho(0,ipix,*)=tmp(4*nz:(4+1)*nz-1)
-        m.el_p(0,ipix,*)=tmp(5*nz:(5+1)*nz-1)
-        m.v_los(0,ipix,*)=tmp(6*nz:(6+1)*nz-1)
-        m.v_mic(0,ipix,*)=tmp(7*nz:(7+1)*nz-1)
-        m.b_los_z(0,ipix,*)=tmp(8*nz:(8+1)*nz-1)
-        m.b_los_x(0,ipix,*)=tmp(9*nz:(9+1)*nz-1)
-        m.b_los_y(0,ipix,*)=tmp(10*nz:(10+1)*nz-1)
-;        m.b_local_inc(0,ipix,*)=tmp(11*nz:(11+1)*nz-1)
-;        m.b_local_azi(0,ipix,*)=tmp(12*nz:(12+1)*nz-1)
-        m.v_mac(0,ipix)=tmp(13*nz)
-        m.stray_frac(0,ipix)=tmp(13*nz+1)
-        m.ffactor(0,ipix)=tmp(13*nz+2)
-        m.chrom_x[0,ipix]=0.
-        m.chrom_y[0,ipix]=0.
+        if formatversion eq 'spic18.12' then begin
+           i=22*nz+92+13
+           m.spic_nz[ix,iy]=tmp[i] & i=i+1
+           m.spic_nlambda[ix,iy]=tmp[i] & i=i+1
+           m.spic_z[ix,iy,*]=tmp[i:i+maxspic_nz] & i=i+maxspic_nz
+           m.spic_boundary_int[ix,iy,*]=tmp[i:i+maxspic_nz*maxspic_nlambda] & i=i+maxspic_nz*maxspic_nlambda
+           m.spic_temp[ix,iy]=tmp[i] & i=i+1
+           m.spic_dens_factor[ix,iy]=tmp[i] & i=i+1
+           m.spic_ds[ix,iy]=tmp[i] & i=i+1
+           m.spic_doppler[ix,iy]=tmp[i] & i=i+1
+        endif
      endfor
      ON_IOERROR,NULL
  endif

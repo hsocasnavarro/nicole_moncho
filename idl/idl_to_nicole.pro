@@ -20,20 +20,7 @@ pro idl_to_nicole,model=m_in,i=i,q=q,u=u,v=v,file=filename,extractx=indx,$
      openw,iunit,filemod,/get_lun,/swap_if_big
      if (size(m.t))(0) eq 1 then begin
         nz=long((size(m.t))(1))
-        m={z:reform(m.z,1,1,nz),tau:reform(m.tau,1,1,nz),t:reform(m.t,1,1,nz),$
-           el_p:reform(m.el_p,1,1,nz),gas_p:reform(m.gas_p,1,1,nz),rho:reform(m.rho,1,1,nz),v_los:reform(m.v_los,1,1,nz),v_mic:reform(m.v_mic,1,1,nz),b_los_z:reform(m.b_los_z,1,1,nz),$
-           b_los_x:reform(m.b_los_x,1,1,nz),b_los_y:reform(m.b_los_y,1,1,nz),$
-           b_z:reform(m.b_z,1,1,nz),b_x:reform(m.b_x,1,1,nz),b_y:reform(m.b_y,1,1,nz),$
-           v_z:reform(m.v_z,1,1,nz),v_x:reform(m.v_x,1,1,nz),v_y:reform(m.v_y,1,1,nz),$
-           nH:reform(m.nH,1,1,nz),nHminus:reform(m.nHminus,1,1,nz),nHplus:reform(m.nHplus,1,1,nz),$
-           keep_el_p:reform(m.keep_el_p,1,1),keep_gas_p:reform(m.keep_gas_p,1,1), $
-           keep_rho:reform(m.keep_rho,1,1), keep_nH:reform(m.keep_nH,1,1), $
-           keep_nHminus:reform(m.keep_nHminus,1,1), keep_nHplus:reform(m.keep_nHplus,1,1), $
-           keep_nH2:reform(m.keep_nH2,1,1), keep_nH2plus:reform(m.keep_nH2plus,1,1), $
-           nH2:reform(m.nH2,1,1,nz),nH2plus:reform(m.nH2plus,1,1,nz),$
-           v_mac:reform(m.v_mac,1,1),ffactor:reform(m.ffactor,1,1),$
-           chrom_x:reform(m.chrom_x,1,1),chrom_y:reform(m.chrom_y,1,1), $
-           stray_frac:reform(m.stray_frac,1,1),abundance:reform(fltarr(92),1,1,92)}
+        m=new_model(1,1,nz)
         nx=1l
         ny=1l
      endif else begin
@@ -47,8 +34,12 @@ pro idl_to_nicole,model=m_in,i=i,q=q,u=u,v=v,file=filename,extractx=indx,$
      nnx=long(n_elements(indx))
      nny=long(n_elements(indy))
      tmp=lon64arr(22*nz+13+92)
-     tmp(0)=4049129056382445934
-     tmp(1)=2314885530823504944
+     ; 18.04
+     ;tmp(0)=4049129056382445934
+     ;tmp(1)=2314885530823504944
+     ; spic18.12
+     tmp(0)=8313474953548884334
+     tmp(1)=3616722794636863856
      tmp(2)=nny*long64(2)^32 + nnx
      tmp(3)=nz
      writeu,iunit,tmp
@@ -93,6 +84,16 @@ pro idl_to_nicole,model=m_in,i=i,q=q,u=u,v=v,file=filename,extractx=indx,$
         tmp(22*nz+11)=m.chrom_x(ix,iy)
         tmp(22*nz+12)=m.chrom_y(ix,iy)
         tmp(22*nz+12+1:22*nz+12+92)=m.abundance(ix,iy,0:91)
+        i=22*nz+92+13
+        tmp[i]=m.spic_nz[ix,iy] & i=i+1
+        tmp[i]=m.spic_nlambda[ix,iy] & i=i+1
+        tmp[i:i+maxspic_nz]=m.spic_z[ix,iy,*] & i=i+maxspic_nz
+        tmp[i:i+maxspic_nz*maxspic_nlambda]=m.spic_boundary_int[ix,iy,*] & i=i+maxspic_nz*maxspic_nlambda
+        tmp[i]=m.spic_temp[ix,iy] & i=i+1
+        tmp[i]=m.spic_dens_factor[ix,iy] & i=i+1
+        tmp[i]=m.spic_ds[ix,iy] & i=i+1
+        tmp[i]=m.spic_doppler[ix,iy] & i=i+1
+        
         writeu,iunit,tmp
      endfor
      free_lun,iunit

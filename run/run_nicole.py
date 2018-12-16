@@ -388,6 +388,8 @@ for icycle in range(int(ncycles)):
         boundarycond = '0'
     elif boundarycond == 'zero':
         boundarycond = '1'
+    elif 'spicule' in boundarycond:
+        boundarycond = '2'
     else:
         print 'Error in NICOLE.input. Invalid formal solution boundary condition'
         print 'Must be Normal, Difusion or Zero'

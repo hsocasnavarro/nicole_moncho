@@ -255,7 +255,10 @@ function read_model,filename,outfile=outfile,nz=nz,npix=npix,chisq=chisq, $
            m.spic_nz[ix,iy]=tmp[i] & i=i+1
            m.spic_nlambda[ix,iy]=tmp[i] & i=i+1
            m.spic_z[ix,iy,*]=tmp[i:i+maxspic_nz] & i=i+maxspic_nz
-           m.spic_boundary_int[ix,iy,*]=tmp[i:i+maxspic_nz*maxspic_nlambda] & i=i+maxspic_nz*maxspic_nlambda
+           for il=0,maxspic_nlambda-1 do begin
+              m.spic_boundary_int[ix,iy,*,il]=tmp[i:i+maxspic_nz]
+              i=i+maxspic_nz
+           endfor
            m.spic_temp[ix,iy]=tmp[i] & i=i+1
            m.spic_dens_factor[ix,iy]=tmp[i] & i=i+1
            m.spic_ds[ix,iy]=tmp[i] & i=i+1

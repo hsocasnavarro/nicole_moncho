@@ -788,7 +788,10 @@ for icycle in range(int(ncycles)):
     if nodesffactor == '-1': nodesffactor=get_value(config,'filling factor','-1','NICOLE.input','Nodes')
     nodesab=get_value(config,'Abundances','-1','NICOLE.input','Nodes')
     if nodesab == '-1': nodesab=get_value(config,'Number of abundances','-1','NICOLE.input','Nodes')
-# Nodes for the second component
+    nodes_spic_temp=get_value(config,'Spicule temperature','-1','NICOLE.input','Nodes')
+    nodes_spic_dens_factor=get_value(config,'Spicule density factor','-1','NICOLE.input','Nodes')
+    
+    # Nodes for the second component
     nodesT2=get_value(config,'Temperature','-1','NICOLE.input','Nodes 2')
     if nodesT2 == '-1': nodesT2=get_value(config,'T','-1','NICOLE.input','Nodes 2')
     if nodesT2 == '-1': nodesT2=get_value(config,'Temp','-1','NICOLE.input','Nodes 2')
@@ -872,6 +875,9 @@ for icycle in range(int(ncycles)):
     if nodesSy2 == '-1': nodesSy2=get_value(config,'Sy','-1','NICOLE.input','Nodes 2')
     nodesab2=get_value(config,'Abundances','-1','NICOLE.input','Nodes 2')
     if nodesab2 == '-1': nodesab2=get_value(config,'Number of abundances','-1','NICOLE.input','Nodes 2')
+    nodes_spic_temp=get_value(config,'Spicule temperature','-1','NICOLE.input','Nodes')
+    nodes_spic_dens_factor=get_value(config,'Spicule density factor','-1','NICOLE.input','Nodes')
+
     f=open('nodelocations.dat'+suffix,'wb')
     scratch=list()
     if (len(nodesTx) > 0):
@@ -1509,6 +1515,9 @@ for icycle in range(int(ncycles)):
                 nodesab[iab]=str(elements.index(nodesab[iab])+1)
     f.write(str(nab)+' ! Number of abundances to invert \n')
     if nab >= 1: f.write('  '.join(nodesab)+'  ! Abundances to invert \n')
+    f.write(nodes_spic_temp+' ! Nodes in Spic temp \n')
+    f.write(nodes_spic_dens_factor+' ! Nodes in Spic density factor \n')
+
     f.write(nodesT2+' ! Nodes in T 2\n')
     f.write(nodesv2+' ! Nodes in v_los 2\n')
     f.write(nodesvmic2+' ! Nodes in v_mic 2\n')
@@ -1527,6 +1536,8 @@ for icycle in range(int(ncycles)):
                 nodesab2[iab]=str(elements.index(nodesab2[iab])+1)
     f.write(str(nab)+' ! Number of abundances to invert 2\n')
     if nab >= 1: f.write('  '.join(nodesab2)+'  ! Abundances to invert 2\n')
+    f.write(nodes_spic_temp+' ! Nodes in Spic temp \n')
+    f.write(nodes_spic_dens_factor+' ! Nodes in Spic density factor \n')
 
     outputpop=str(outputpop == '1')[0]
     outputcontop=str(outputcontop == '1')[0]

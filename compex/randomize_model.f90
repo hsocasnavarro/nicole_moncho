@@ -67,6 +67,16 @@ Subroutine Randomize_Model(Params, Nodes, ModelIn, ModelOut)
      ModelOut%ffactor=1000.+(kk-.5)*500
   End if
 
+  If (Nodes%n_nodes_spic_temp .gt. 0) then
+     Call Random_number(kk)
+     ModelOut%spic_temp=2000.+(kk)*5000
+  End if
+
+  If (Nodes%n_nodes_spic_dens_factor .gt. 0) then
+     Call Random_number(kk)
+     ModelOut%spic_temp=.1+kk*2
+  End if
+
   If (Nodes%n_nodes_mac .gt. 0) then
      Call Random_number(kk)
      ModelOut%v_mac=kk*2.e5

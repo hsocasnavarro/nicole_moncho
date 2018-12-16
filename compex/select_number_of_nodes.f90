@@ -24,6 +24,8 @@ Subroutine Select_number_of_nodes(Params, Atmo, Nodes, icall)
   If (Nodes%n_nodes_by2 .eq. -1) Nodes%n_nodes_by2=0
   If (Nodes%n_nodes_chrom_x2 .eq. -1) Nodes%n_nodes_chrom_x2=0
   If (Nodes%n_nodes_chrom_y2 .eq. -1) Nodes%n_nodes_chrom_y2=0
+  If (Nodes%n_nodes_spic_temp2 .eq. -1) Nodes%n_nodes_spic_temp2=0
+  If (Nodes%n_nodes_spic_dens_factor2 .eq. -1) Nodes%n_nodes_spic_dens_factor2=0
 
 !  
   If (icall .eq. 1) then 
@@ -41,6 +43,8 @@ Subroutine Select_number_of_nodes(Params, Atmo, Nodes, icall)
      If (Nodes%n_nodes_ffactor .eq. -1) Nodes%n_nodes_ffactor=0
      If (Nodes%n_nodes_chrom_x .eq. -1) Nodes%n_nodes_chrom_x=0
      If (Nodes%n_nodes_chrom_y .eq. -1) Nodes%n_nodes_chrom_y=0
+     If (Nodes%n_nodes_spic_temp .eq. -1) Nodes%n_nodes_spic_temp=0
+     If (Nodes%n_nodes_spic_dens_factor .eq. -1) Nodes%n_nodes_spic_dens_factor=0
      If (Maxval(Abs(Params%Stray_prof)) .lt. 1.e-10) &
           Nodes%n_nodes_stray=0
      If (Params%IProfExists) Nodes%n_nodes_mac=0
@@ -88,12 +92,14 @@ Subroutine Select_number_of_nodes(Params, Atmo, Nodes, icall)
        Nodes%n_nodes_blong + Nodes%n_nodes_mic + Nodes%n_nodes_bx + &
        Nodes%n_nodes_by + Nodes%n_nodes_mac + Nodes%n_nodes_stray + &
        Nodes%n_nodes_ffactor + Nodes%n_nodes_ab + &
-       Nodes%n_nodes_chrom_x + Nodes%n_nodes_chrom_y
+       Nodes%n_nodes_chrom_x + Nodes%n_nodes_chrom_y + &
+       Nodes%n_nodes_spic_temp + Nodes%n_nodes_spic_dens_factor
   Params%n_free_parameters=Params%n_free_parameters+ &
        Nodes%n_nodes_t2 + Nodes%n_nodes_v2 + &
        Nodes%n_nodes_blong2 + Nodes%n_nodes_mic2 + Nodes%n_nodes_bx2 + &
        Nodes%n_nodes_by2 + Nodes%n_nodes_ab2 + &
-       Nodes%n_nodes_chrom_x2 + Nodes%n_nodes_chrom_y2
+       Nodes%n_nodes_chrom_x2 + Nodes%n_nodes_chrom_y2 + &
+       Nodes%n_nodes_spic_temp2 + Nodes%n_nodes_spic_dens_factor2
 
 !
 ! Location of the nodes:

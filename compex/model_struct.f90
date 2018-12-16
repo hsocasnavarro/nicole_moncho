@@ -27,7 +27,7 @@ Module Model_structure
      real :: keep_nH2, keep_nh2plus
      real, dimension(n_model_elements) :: Abundance
      ! New elements for spicular features
-     integer :: spic_nz=0, nlambda=0
+     integer :: spic_nz=0, spic_nlambda=0
      real, dimension(:), allocatable :: spic_z
      real, dimension(:,:), allocatable :: spic_boundary_int
      real :: spic_temp, spic_dens_factor, spic_doppler, spic_ds ! spic_ds in km
@@ -119,13 +119,13 @@ Contains
   Allocate(Modelo%nHminus(npoints))
   Allocate(Modelo%nH2(npoints))
   Allocate(Modelo%nH2plus(npoints))
-  if (Modelo%spic_nz .le. 0 .or. Modelo%nlambda .le. 0 .or. Modelo%spic_nz .gt. maxspic_nz) then
-     Print *,'Error allocating model, spic_nz=',Modelo%spic_nz,' nlambda=',Modelo%nlambda
+  if (Modelo%spic_nz .le. 0 .or. Modelo%spic_nlambda .le. 0 .or. Modelo%spic_nz .gt. maxspic_nz) then
+     Print *,'Error allocating model, spic_nz=',Modelo%spic_nz,' nlambda=',Modelo%spic_nlambda
      Print *,'Maximum spic_nz parameter (maxspic_nz in model_struct.f90)=',maxspic_nz
      Stop
   Endif
   Allocate(Modelo%spic_z(Modelo%spic_nz))
-  Allocate(Modelo%spic_boundary_int(Modelo%spic_nz,Modelo%nlambda))
+  Allocate(Modelo%spic_boundary_int(Modelo%spic_nz,Modelo%spic_nlambda))
 !
   Return
 End Subroutine Allocate_model
@@ -225,7 +225,7 @@ Subroutine Model_assign(A,B)
   A%Keep_nh2plus=B%Keep_nh2plus
   A%Abundance=B%Abundance
   A%spic_nz=B%spic_nz
-  A%nlambda=B%nlambda
+  A%spic_nlambda=B%spic_nlambda
   A%spic_z=B%spic_z
   A%spic_boundary_int=B%spic_boundary_int
   A%spic_temp=B%spic_temp

@@ -88,7 +88,10 @@ pro idl_to_nicole,model=m_in,i=i,q=q,u=u,v=v,file=filename,extractx=indx,$
         tmp[i]=m.spic_nz[ix,iy] & i=i+1
         tmp[i]=m.spic_nlambda[ix,iy] & i=i+1
         tmp[i:i+maxspic_nz]=m.spic_z[ix,iy,*] & i=i+maxspic_nz
-        tmp[i:i+maxspic_nz*maxspic_nlambda]=m.spic_boundary_int[ix,iy,*] & i=i+maxspic_nz*maxspic_nlambda
+        for il=0,maxspic_nlambda-1 do begin
+           tmp[i:i+maxspic_nz]=m.spic_boundary_int[ix,iy,*,il]
+           i=i+maxspic_nz
+        endfor
         tmp[i]=m.spic_temp[ix,iy] & i=i+1
         tmp[i]=m.spic_dens_factor[ix,iy] & i=i+1
         tmp[i]=m.spic_ds[ix,iy] & i=i+1

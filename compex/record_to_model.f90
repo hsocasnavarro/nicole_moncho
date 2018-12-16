@@ -1,3 +1,4 @@
+
 ! Extract model from a 1D vector used to read/write records
 ! Use dir=1 to extract model from vector or dir=-1 for the opposite
 Subroutine Record_to_model_2comp(np, Atmo, Vector1, Vector2, KeepVars, dir)
@@ -35,7 +36,7 @@ Subroutine Record_to_model(np, Atmo, Vector, dir)
 Use Model_structure
 Implicit None
 Type (Model) :: Atmo
-Integer :: dir, np, ivar
+Integer :: dir, np, ivar, i, il
 Real, Dimension(nvarsdepth*np+nvarssingle) :: Vector
 Real, Dimension(nvarsdepth*np+nvarssingle) :: Vector2
 !
@@ -85,6 +86,20 @@ If (dir .eq. 1) then
    Atmo%chrom_x=Vector(nvarsdepth*np+12)
    Atmo%chrom_y=Vector(nvarsdepth*np+13)
    Atmo%Abundance(:)=Vector(nvarsdepth*np+13+1:nvarsdepth*np+13+n_model_elements)
+   i=nvarsdepth*np+13+n_model_elements+1
+   Atmo%spic_nz=Vector(i) ; i=i+1
+   Atmo%spic_nz=Vector(i) ; i=i+1
+   Atmo%spic_nlambda=Vector(i) ; i=i+1
+   Atmo%spic_z(:)=Vector(i:i+maxspic_nz) ; i=i+maxspic_nz
+   Do il=1, maxspic_nlambda
+      Atmo%spic_boundary_int(:,il)=Vector(i:i+maxspic_nz)
+      i=i+maxspic_nz
+   End do
+   Atmo%spic_temp=Vector(i) ; i=i+1
+   Atmo%spic_dens_factor=Vector(i) ; i=i+1
+   Atmo%spic_ds=Vector(i) ; i=i+1
+   Atmo%spic_doppler=Vector(i) ; i=i+1
+   
 Else if (dir .eq. -1) then
    Vector(1:np)=Atmo%z_scale(1:np)
    Vector(np+1:2*np)=Atmo%ltau_500(1:np)
@@ -123,6 +138,19 @@ Else if (dir .eq. -1) then
    Vector(nvarsdepth*np+13)=Atmo%chrom_y
    Vector(nvarsdepth*np+13+1:nvarsdepth*np+13+n_model_elements)= &
         Atmo%Abundance(:)
+   i=nvarsdepth*np+13+n_model_elements+1
+   Vector(i)=Atmo%spic_nz ; i=i+1
+   Vector(i)=Atmo%spic_nz ; i=i+1
+   Vector(i)=Atmo%spic_nlambda ; i=i+1
+   Vector(i:i+maxspic_nz)=Atmo%spic_z(:) ; i=i+maxspic_nz
+   Do il=1, maxspic_nlambda
+      Vector(i:i+maxspic_nz)=Atmo%spic_boundary_int(:,il)
+      i=i+maxspic_nz
+   End do
+   Vector(i)=Atmo%spic_temp ; i=i+1
+   Vector(i)=Atmo%spic_dens_factor ; i=i+1
+   Vector(i)=Atmo%spic_ds ; i=i+1
+   Vector(i)=Atmo%spic_doppler ; i=i+1
 Else
    Print *,'Unknown value for dir in compex/record_to_model.f90'
    Stop

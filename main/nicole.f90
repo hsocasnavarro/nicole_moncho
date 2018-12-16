@@ -261,6 +261,8 @@ Program Nicole
      Allocate(nodes%i_nodes_ab(nodes%n_nodes_ab))
      Read (headerunit, *) nodes%i_nodes_ab(1:nodes%n_nodes_ab)
   End if
+  Read (headerunit, *) nodes%n_nodes_spic_temp
+  Read (headerunit, *) nodes%n_nodes_spic_dens_factor
   Read (headerunit, *) nodes%n_nodes_t2
   Read (headerunit, *) nodes%n_nodes_v2
   Read (headerunit, *) nodes%n_nodes_mic2
@@ -276,6 +278,8 @@ Program Nicole
      Allocate(nodes%i_nodes_ab2(nodes%n_nodes_ab2))
      Read (headerunit, *) nodes%i_nodes_ab2(1:nodes%n_nodes_ab2)
   End if
+  Read (headerunit, *) nodes%n_nodes_spic_temp2
+  Read (headerunit, *) nodes%n_nodes_spic_dens_factor2
   ! Debug mode? (Note: Only Debug_level works in MPI mode)
   Read (headerunit, *) Debug_level, Params%Reinterpolate, Debug_outputpop, &
        Debug_outputcontop, Debug_outputNLTEsf
